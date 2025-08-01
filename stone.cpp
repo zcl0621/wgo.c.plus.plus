@@ -3,11 +3,11 @@
 //
 #include "color.h"
 
-class Store {
+class Stone {
 public:
     int x;
     int y;
     Color c;
 
-    Store(const int x, const int y, const Color c) : x(x), y(y), c(c) {}
+    Stone(const int x, const int y, const Color c) : x(x), y(y), c(c) {}
 };

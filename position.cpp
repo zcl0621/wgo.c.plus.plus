@@ -3,11 +3,11 @@
 //
 #include <vector>
 #include "color.h"
-#include "store.cpp"
+#include "stone.cpp"
 
 struct Compare {
-    std::vector<Store> add;
-    std::vector<Store> remove;
+    std::vector<Stone> add;
+    std::vector<Stone> remove;
 };
 
 
