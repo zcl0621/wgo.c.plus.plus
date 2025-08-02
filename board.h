@@ -3,7 +3,8 @@
 //
 #include <iomanip>
 #include <iostream>
-#include "position.cpp"
+#include "position.h"
+#pragma once
 
 class Board {
 public:

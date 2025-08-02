@@ -3,4 +3,4 @@
 //
 #pragma once
 
-enum Color { BLACK, WHITE, EMPTY };
+enum Color { BLACK = 1, WHITE = -1, EMPTY = 0,TESTED = 2 };

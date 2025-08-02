@@ -4,8 +4,9 @@ project(consoleGo)
 set(CMAKE_CXX_STANDARD 17)
 
 add_executable(consoleGo main.cpp
-        position.cpp
+        position.h
         color.h
         stone.cpp
-        board.cpp
+        board.h
+        game.cpp
 )
