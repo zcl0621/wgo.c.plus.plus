@@ -3,7 +3,7 @@
 //
 #include <vector>
 #include "color.h"
-#include "stone.cpp"
+#include "stone.h"
 #pragma once
 
 struct Compare {

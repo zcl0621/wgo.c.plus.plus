@@ -12,13 +12,12 @@
 class Game {
 private:
     std::vector<Position> stack;
-    Board board;
 
 public:
     int size;
     Color turn = BLACK;
 
-    explicit Game(const int size) : board(Board(size)), size(size) {
+    explicit Game(const int size) : size(size) {
         stack.emplace_back(size, 0, 0);
     };
 
@@ -154,7 +153,6 @@ public:
 
         // 切换回合
         turn = static_cast<Color>(-c);
-        board.display(getPosition());
         return captured;
     }
     void pass(const Color c = EMPTY) {
