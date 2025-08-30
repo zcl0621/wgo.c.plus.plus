@@ -21,20 +21,14 @@ include_directories(
 # Main executable
 add_executable(consoleGo
     main.cpp
-    position.h
-    color.h
-    stone.h
-    board.h
-    game.h
+        io.h
+        board.h
+        utils.h
+        node.h
 )
 
 add_executable(GameTests
     test/test_game.cpp
-    position.h
-    color.h
-    stone.h
-    board.h
-    game.h
 )
 
 # Link test executable with GTest
