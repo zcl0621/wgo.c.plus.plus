@@ -10,8 +10,8 @@
 #include <vector>
 
 #include "board.h"
-#include "utils.h"
 #include "colour.h"
+#include "utils.h"
 
 const std::vector<std::string> mutors = {"B", "W", "AB", "AW", "AE", "PL", "SZ"};
 
@@ -371,7 +371,7 @@ struct Node : public std::enable_shared_from_this<Node> {
     // automatically determined.
     std::shared_ptr<Node> PlayColour(std::string move, Colour colour, bool checkLegal) {
         if (checkLegal) {
-            auto legal = this->board->LegalColour(move,colour);
+            auto legal = this->board->LegalColour(move, colour);
             if (!legal) {
                 throw std::runtime_error("Illegal move: " + move);
             }
@@ -652,7 +652,7 @@ struct Node : public std::enable_shared_from_this<Node> {
         }
         sgf += ")";
         return sgf;
-    }
+    };
 };
 
 #endif // CONSOLEGO_NODE_H

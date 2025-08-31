@@ -1,10 +1,10 @@
 #ifndef CONSOLEGO_BOARD_H
 #define CONSOLEGO_BOARD_H
 
-
-#include <map>
-#include <string>
 #include <iostream>
+#include <map>
+#include <sstream>
+#include <string>
 
 #include "colour.h"
 #include "utils.h"
@@ -127,7 +127,55 @@ struct Board {
         s += "Next player: " + Word(this->player) + "\n";
         std::cout << s;
     };
-    
+
+    void DumpBoard() { this->Dump(); }
+
+    // String returns an ASCII representation of the board.
+    std::string String() {
+        std::ostringstream b;
+        int ko_x = -1, ko_y = -1;
+        if (!this->ko.empty()) {
+            auto [x, y, onboard] = ParsePoint(this->ko, this->size);
+            if (onboard) {
+                ko_x = x;
+                ko_y = y;
+            }
+        }
+        for (int y = 0; y < this->size; y++) {
+            for (int x = 0; x < this->size; x++) {
+                Colour c = this->state[x][y];
+                if (c == Colour::BLACK) {
+                    b << " X";
+                } else if (c == Colour::WHITE) {
+                    b << " O";
+                } else if (ko_x == x && ko_y == y) {
+                    b << " :";
+                } else {
+                    if (IsStarPoint(Point(x, y), this->size)) {
+                        b << " *"; // C++无HoshiString，默认用*，可自定义
+                    } else {
+                        b << " .";
+                    }
+                }
+            }
+            b << "\n";
+        }
+        return b.str();
+    }
+
+    std::string koSquareFinder(std::string p) {
+        std::vector<std::string> hits;
+        for (auto &a: AdjacentPoints(p, this->size)) {
+            if (this->Get(a) == Colour::EMPTY) {
+                hits.push_back(a);
+            }
+        }
+        if (hits.size() != 1) {
+            throw std::invalid_argument("koSquareFinder(): bad point: " + p);
+        }
+        return hits[0];
+    };
+
     void ClearKo() {
 
     };
