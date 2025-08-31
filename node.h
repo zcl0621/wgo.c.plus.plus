@@ -76,7 +76,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
     // AddValue adds the specified string as a value for the given key. If the value
     // already exists for the key, nothing happens.
     void AddValue(std::string key, std::string val) {
-        this->mutor_check(key);
+        this->mutorCheck(key);
         auto ki = this->key_index(key);
         if (ki == -1) {
             this->props.push_back(std::vector<std::string>{key, val});
@@ -96,7 +96,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
         if (ki == -1) {
             return;
         }
-        this->mutor_check(key);
+        this->mutorCheck(key);
         this->props.erase(this->props.begin() + ki);
     }
 
@@ -107,7 +107,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
         if (ki == -1) {
             return;
         }
-        this->mutor_check(key);
+        this->mutorCheck(key);
         for (size_t i = 1; i < this->props[ki].size(); i++) {
             if (this->props[ki][i] == val) {
                 this->props[ki].erase(this->props[ki].begin() + i);
@@ -121,7 +121,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
 
     // GetValue returns the first value for the given key, if present, in which case
     // ok will be true. Otherwise it returns "" and false.
-std::string GetValue(std::string key) {
+    std::string GetValue(std::string key) {
         auto ki = this->key_index(key);
         if (ki == -1) {
             return "";
@@ -293,7 +293,7 @@ std::string GetValue(std::string key) {
             // Add to children
             new_parent->children.push_back(shared_from_this());
         }
-        this->clear_board_cache_recursive();
+        this->clearBoardCacheRecursive();
     }
 
     // DeleteChildren deletes all children of a node. This is useful for
@@ -617,20 +617,20 @@ std::string GetValue(std::string key) {
     //
     //		* Changing a board-altering property.
     //		* Changing the identity of its parent.
-    void clear_board_cache_recursive() {
+    void clearBoardCacheRecursive() {
         if(this->board.get() == nullptr) {
             return;
         }
         this->board = nullptr;
         for (auto& child : this->children) {
-            child->clear_board_cache_recursive();
+            child->clearBoardCacheRecursive();
         }
     }
 
-    void mutor_check(std::string key) {
+    void mutorCheck(std::string key) {
         for (auto& s:mutors) {
             if (s == key) {
-                 this->clear_board_cache_recursive();
+                 this->clearBoardCacheRecursive();
                  break;
             }
         }
