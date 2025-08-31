@@ -611,4 +611,46 @@ struct Node : public std::enable_shared_from_this<Node> {
     }
     // TODO: complete this function
     std::shared_ptr<Board> GetBoard() { return this->board; }
+
+    // Save saves the entire game tree to the specified file. It does not need to be
+    // called from the root node, but can be called from any node in an SGF tree -
+    // the whole tree is always saved.
+
+    std::string Save() { return SaveCollection(std::vector<std::shared_ptr<Node>>{shared_from_this()}); }
+
+    std::string SaveCollection(std::vector<std::shared_ptr<Node>> nodes) {
+        std::string sgf;
+        std::vector<std::shared_ptr<Node>> roots;
+        for (auto &node: nodes) {
+            if (node) {
+                roots.push_back(node);
+            }
+        }
+        if (roots.size() == 0) {
+            return "()";
+        }
+        for (auto &root: roots) {
+            sgf = root->writeTree();
+        }
+        return sgf;
+    }
+    std::string writeTree() {
+        std::string sgf = "(";
+        sgf += this->WriteTo();
+        if (children.size() == 0) {
+            // leaf node
+            sgf += ")";
+            return sgf;
+        } else if (children.size() == 1) {
+            // main line, no branch, 递归主干
+            sgf += children[0]->writeTree().substr(1, children[0]->writeTree().size() - 2); // 去掉子树的外层括号
+        } else {
+            // 分支，每个分支都递归包裹
+            for (auto &child: children) {
+                sgf += child->writeTree();
+            }
+        }
+        sgf += ")";
+        return sgf;
+    }
 };

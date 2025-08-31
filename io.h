@@ -6,4 +6,3 @@
 #define CONSOLEGO_IO_H
 
 #endif // CONSOLEGO_IO_H
-
