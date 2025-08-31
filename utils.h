@@ -6,6 +6,7 @@
 #include <tuple>
 #include <string>
 
+// TODO: complete it
 bool ValidPoint(std::string p, int size) {
     return false;
 }

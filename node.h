@@ -117,7 +117,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
 
     // GetValue returns the first value for the given key, if present, in which case
     // ok will be true. Otherwise it returns "" and false.
-    std::string GetValue(std::string key) {
+std::string GetValue(std::string key) {
         auto ki = this->key_index(key);
         if (ki == -1) {
             return "";
@@ -326,25 +326,8 @@ struct Node:  public std::enable_shared_from_this<Node>{
         return oss.str();
     }
 
-    // GetLine returns the line representation of the node
-    std::vector<std::shared_ptr<Node>> GetLine() const {
-        std::vector<std::shared_ptr<Node>> ret;
-        auto node = std::const_pointer_cast<Node>(shared_from_this());
-        while (node) {
-            ret.push_back(node);
-            node = node->parent.lock();
-        }
-        std::reverse(ret.begin(), ret.end());
-        return ret;
-    }
-    // SubtreeSize returns the number of nodes in the subtree rooted at this node
-    int SubtreeSize() {
-        int size = 1;  // Count this node
-        for (const auto& child : children) {
-            size += child->SubtreeSize();
-        }
-        return size;
-    }
+
+
 
     // Validate checks a node for obvious problems;
     // found as an error, other wise it returns nil.
@@ -381,5 +364,181 @@ struct Node:  public std::enable_shared_from_this<Node>{
             }
         }
     }
+    // Play attempts to play the specified move at the node. The argument should be
+    // an SGF coordinate, e.g. "dd". The colour is determined intelligently.
+    //
+    // If successful, a new node is created, and attached as a child. That child is
+    // then returned and the error is nil. However, if the specified move already
+    // existed in a child, that child is returned instead and no new node is
+    // created; the error is still nil. On failure, the original node is returned,
+    // along with an error. Failure indicates the move was illegal.
+    //
+    // Note that passes cannot be played with Play.
+    std::shared_ptr<Node> Play(std::string move) {
+        return  this->PlayColour(move, this->board->player, true);
+    }
 
+    // PlayColour is like Play, except the colour is specified rather than being
+    // automatically determined.
+    std::shared_ptr<Node> PlayColour(std::string move, std::string colour,bool checkLegal) {
+        if(checkLegal) {
+            auto legal = this->board->LegalColour(move, this->board->size);
+            if (!legal) {
+                throw std::runtime_error("Illegal move: " + move);
+            }
+        }
+        auto key = "B";
+        if (colour == "W") {
+            key = "W";
+        }
+        auto child = this->children;
+        for(auto i = 0;i < child.size();i ++) {
+            if (child[i]->ValueCount(key) == 1) {
+                auto mv = child[i]->GetValue(key);
+                if (mv == move) {
+                    return child[i];
+                }
+            }
+        }
+        auto newNode = std::make_shared<Node>(shared_from_this());
+        newNode->SetValue(key, move);
+        return newNode;
+    }
+    // Pass passes. The colour is determined intelligently. Normally, a new node is
+    // created, attached as a child, and returned. However, if the specified pass
+    // already existed in a child, that child is returned instead and no new node is
+    // created.
+    std::shared_ptr<Node> Pass() {
+        return this->PassColour(this->board->player);
+    }
+
+    // PassColour is like Pass, except the colour is specified rather than being
+    // automatically determined.
+    std::shared_ptr<Node> PassColour(std::string colour) {
+        if (colour != "W" && colour != "B") {
+            throw std::runtime_error("Invalid colour: " + colour);
+        }
+        auto key = (colour == "W") ? "W" : "B";
+        for (const auto& child : this->children) {
+            if (child->ValueCount(key) == 1) {
+                auto mv = child->GetValue(key);
+                if (!ValidPoint(mv, this->board->size)) {
+                    return child;
+                }
+            }
+        }
+        auto newNode = std::make_shared<Node>(shared_from_this());
+        newNode->SetValue(key, "");
+        return newNode;
+    }
+
+    // Tree functions
+
+    // GetRoot travels up the tree, examining each node's parent until it finds the
+    // root node, which it returns.
+    std::shared_ptr<Node> GetRoot() {
+        auto root = shared_from_this();
+        while (root->parent.lock()) {
+            root = root->parent.lock();
+        }
+        return root;
+    }
+
+    // GetEnd travels down the tree from the node, until it reaches a node with zero
+    // children. It returns that node. Note that, if GetEnd is called on a node that
+    // is not on the main line, the result will not be on the main line either, but
+    // will instead be the end of the current branch.
+    std::shared_ptr<Node> GetEnd() {
+        auto node = shared_from_this();
+        while (!node->children.empty()) {
+            node = node->children.back();
+        }
+        return node;
+    }
+
+    // GetLine returns the line representation of the node
+    std::vector<std::shared_ptr<Node>> GetLine() const {
+        std::vector<std::shared_ptr<Node>> ret;
+        auto node = std::const_pointer_cast<Node>(shared_from_this());
+        while (node) {
+            ret.push_back(node);
+            node = node->parent.lock();
+        }
+        std::reverse(ret.begin(), ret.end());
+        return ret;
+    }
+
+    // MakeMainLine adjusts the tree structure so that the main line leads to this
+    // node.
+    void MakeMainLine() {
+        auto node = shared_from_this();
+        while (auto parent = node->parent.lock()) {
+            // Find node in parent's children
+            auto it = std::find_if(parent->children.begin(), parent->children.end(),
+                                   [node](const std::shared_ptr<Node>& child) { return child == node; });
+            if (it != parent->children.end() && it != parent->children.begin()) {
+                // Move node to front
+                parent->children.erase(it);
+                parent->children.insert(parent->children.begin(), node);
+            }
+            node = parent;
+        }
+    }
+
+    // SubtreeSize returns the number of nodes in the subtree rooted at this node
+    int SubtreeSize() {
+        int size = 1;  // Count this node
+        for (const auto& child : children) {
+            size += child->SubtreeSize();
+        }
+        return size;
+    }
+
+    // TreeSize returns the number of nodes in the whole tree.
+    int TreeSize() {
+        return this->GetRoot()->SubtreeSize();
+    }
+
+    // SubtreeNodes returns a slice of every node in a node's subtree, including
+    // itself.
+    std::vector<std::shared_ptr<Node>> SubtreeNodes() {
+        std::vector<std::shared_ptr<Node>> nodes;
+        nodes.push_back(shared_from_this());
+        for (const auto& child : children) {
+            auto childNodes = child->SubtreeNodes();
+            nodes.insert(nodes.end(), childNodes.begin(), childNodes.end());
+        }
+        return nodes;
+    }
+
+    // TreeNodes returns a slice of every node in the tree, including itself.
+    std::vector<std::shared_ptr<Node>> TreeNodes() {
+        std::vector<std::shared_ptr<Node>> nodes;
+        auto root = GetRoot();
+        if (root) {
+            nodes = root->SubtreeNodes();
+        }
+        return nodes;
+    }
+
+    // SubTreeKeyValueCount returns the number of keys and values in a node's
+    // subtree, including itself.
+    std::pair<int, int> SubTreeKeyValueCount() {
+        auto keyCount = this->KeyCount();
+        auto valueCount = 0;
+        for(auto& key : this->AllKeys() ) {
+            valueCount += this->ValueCount(key);
+        }
+        for(auto& child: this->children) {
+            auto [childKeys, childValues] = child->SubTreeKeyValueCount();
+            keyCount += childKeys;
+            valueCount += childValues;
+        }
+        return {keyCount, valueCount}; 
+    }
+    // TreeKeyValueCount returns the number of keys and values in the whole tree.
+    std::pair<int, int> TreeKeyValueCount() {
+        auto [keyCount, valueCount] = this->GetRoot()->SubTreeKeyValueCount();
+        return {keyCount, valueCount};
+    }
 };
