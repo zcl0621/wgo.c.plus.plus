@@ -8,6 +8,7 @@
 #include <sstream>
 #include <memory>
 #include <algorithm>
+#include <map>
 
 #include "board.h"
 #include "utils.h"
@@ -540,5 +541,72 @@ std::string GetValue(std::string key) {
     std::pair<int, int> TreeKeyValueCount() {
         auto [keyCount, valueCount] = this->GetRoot()->SubTreeKeyValueCount();
         return {keyCount, valueCount};
+    }
+
+    // RootBoardSize travels up the tree to the root, and then finds the board size,
+    // which it returns as an integer. If no SZ property is present, it returns 19.
+    int RootBoardSize() {
+        auto root = this->GetRoot();
+        auto sz = root->GetValue("SZ");
+        if (sz == "") {
+            return 19;
+        }
+        try {
+            return std::stoi(sz);
+        } catch (...) {
+            return 19;
+        }
+    }
+
+    // RootKomi travels up the tree to the root, and then finds the komi, which it
+    // returns as a float64. If no KM property is present, it returns 0.
+    float RootKomi() {
+        auto root = this->GetRoot();
+        auto km = root->GetValue("KM");
+        if (km == "") {
+            return 0;
+        }
+        try {
+            return std::stod(km);
+        } catch (...) {
+            return 0;
+        }
+    }
+    // Dyer returns the Dyer Signature of the entire tree.
+    std::string Dyer() {
+        std::map<int, std::string> vals = {
+            {20, "??"},
+            {40,"??"},
+            {60,"??"},
+            {31, "??"},
+            {51,"??"},
+            {71, "??"}
+        };
+        auto moveCount = 0;
+        std::shared_ptr<Node> node = this->GetRoot();
+        auto size = this->RootBoardSize();
+        bool breaked = false;
+        std::vector<std::string> loopKeys = {"B","W"};
+        while(breaked == false) {
+            for(auto& key : loopKeys) {
+                try {
+                    auto mv = node->GetValue(key);
+                    moveCount += 1;
+                    if (moveCount == 20 || moveCount == 40||moveCount== 60 || moveCount==31 || moveCount==51 || moveCount==71) {
+                        if (ValidPoint(mv, size)) {
+                            vals[moveCount] = mv;
+                        }
+                    }
+                } catch (...) {
+                }
+               
+            }
+            node = node->MainChild();
+            if (node == nullptr || moveCount > 71) {
+                breaked = true;
+            }
+
+        }
+        return std::to_string(size) + vals[20] + vals[40] + vals[60] + vals[31] + vals[51] + vals[71];
     }
 };
