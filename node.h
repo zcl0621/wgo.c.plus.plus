@@ -13,6 +13,9 @@
 #include "board.h"
 #include "utils.h"
 
+const std::vector<std::string> mutors = {"B", "W", "AB", "AW", "AE", "PL", "SZ"};
+
+
 struct Node:  public std::enable_shared_from_this<Node>{
     // e.g. ["B" "dd"] ["TR", "dd", "fj", "np"]
     std::vector<std::vector<std::string>> props;
@@ -73,7 +76,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
     // AddValue adds the specified string as a value for the given key. If the value
     // already exists for the key, nothing happens.
     void AddValue(std::string key, std::string val) {
-        this->board->mutor_check(key);
+        this->mutor_check(key);
         auto ki = this->key_index(key);
         if (ki == -1) {
             this->props.push_back(std::vector<std::string>{key, val});
@@ -93,7 +96,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
         if (ki == -1) {
             return;
         }
-        this->board->mutor_check(key);
+        this->mutor_check(key);
         this->props.erase(this->props.begin() + ki);
     }
 
@@ -104,7 +107,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
         if (ki == -1) {
             return;
         }
-        this->board->mutor_check(key);
+        this->mutor_check(key);
         for (size_t i = 1; i < this->props[ki].size(); i++) {
             if (this->props[ki][i] == val) {
                 this->props[ki].erase(this->props[ki].begin() + i);
@@ -290,8 +293,7 @@ std::string GetValue(std::string key) {
             // Add to children
             new_parent->children.push_back(shared_from_this());
         }
-        // TODO: complete this
-        // clean_board_cache_recursive()
+        this->clear_board_cache_recursive();
     }
 
     // DeleteChildren deletes all children of a node. This is useful for
@@ -608,5 +610,33 @@ std::string GetValue(std::string key) {
 
         }
         return std::to_string(size) + vals[20] + vals[40] + vals[60] + vals[31] + vals[51] + vals[71];
+    }
+
+    // clear_board_cache_recursive() needs to be called whenever a node's board cache becomes invalid.
+    // This can be due to:
+    //
+    //		* Changing a board-altering property.
+    //		* Changing the identity of its parent.
+    void clear_board_cache_recursive() {
+        if(this->board.get() == nullptr) {
+            return;
+        }
+        this->board = nullptr;
+        for (auto& child : this->children) {
+            child->clear_board_cache_recursive();
+        }
+    }
+
+    void mutor_check(std::string key) {
+        for (auto& s:mutors) {
+            if (s == key) {
+                 this->clear_board_cache_recursive();
+                 break;
+            }
+        }
+    }
+    // TODO: complete this function
+    std::shared_ptr<Board> GetBoard() {
+        return this->board;
     }
 };
