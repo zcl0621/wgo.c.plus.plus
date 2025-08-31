@@ -1,7 +1,6 @@
 #ifndef CONSOLEGO_NODE_H
 #define CONSOLEGO_NODE_H
 
-#endif // CONSOLEGO_NODE_H
 
 #include <algorithm>
 #include <map>
@@ -654,3 +653,5 @@ struct Node : public std::enable_shared_from_this<Node> {
         return sgf;
     }
 };
+
+#endif // CONSOLEGO_NODE_H

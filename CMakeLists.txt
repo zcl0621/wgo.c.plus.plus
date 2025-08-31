@@ -25,6 +25,7 @@ add_executable(consoleGo
         board.h
         utils.h
         node.h
+        colour.h
 )
 
 add_executable(GameTests
