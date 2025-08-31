@@ -4,10 +4,12 @@
 
 #include <string>
 
+#include "colour.h"
+
 struct Board {
     int size;
-    std::string player;
-    bool LegalColour(std::string color, int size) { return true; }
+    Colour player;
+    bool LegalColour(std::string p ,Colour color) { return true; }
 };
 
 #endif // CONSOLEGO_BOARD_H

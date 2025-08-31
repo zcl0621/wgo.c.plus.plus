@@ -11,6 +11,7 @@
 
 #include "board.h"
 #include "utils.h"
+#include "colour.h"
 
 const std::vector<std::string> mutors = {"B", "W", "AB", "AW", "AE", "PL", "SZ"};
 
@@ -227,32 +228,32 @@ struct Node : public std::enable_shared_from_this<Node> {
         return this->children[this->children.size() - 1];
     }
 
-    std::string LastColor() {
+    Colour LastColor() {
         if (this->children.size() == 0) {
             auto props = this->AllKeys();
             if (props.size() >= 1) {
                 if (props[0] == "B") {
-                    return "W";
+                    return Colour::WHITE;
                 } else if (props[0] == "W") {
-                    return "B";
+                    return Colour::BLACK;
                 } else {
-                    return "B";
+                    return Colour::BLACK;
                 }
             } else {
-                return "B";
+                return Colour::BLACK;
             }
         } else {
             auto props = this->children[0]->LastChild()->AllKeys();
             if (props.size() >= 1) {
                 if (props[0] == "B") {
-                    return "W";
+                    return Colour::WHITE;
                 } else if (props[0] == "W") {
-                    return "B";
+                    return Colour::BLACK;
                 } else {
-                    return "B";
+                    return Colour::BLACK;
                 }
             } else {
-                return "B";
+                return Colour::BLACK;
             }
         }
     }
@@ -339,7 +340,7 @@ struct Node : public std::enable_shared_from_this<Node> {
             if (all_b.size() > 0) {
                 auto mv = all_b[0];
                 if (!ValidPoint(mv, board->size)) {
-                    board->LegalColour(mv, board->size);
+                    board->LegalColour(mv, Colour::BLACK);
                 } else if (mv != "" && mv != "tt") {
                     throw std::runtime_error("Invalid B move point: " + mv);
                 }
@@ -347,7 +348,7 @@ struct Node : public std::enable_shared_from_this<Node> {
             if (all_w.size() > 0) {
                 auto mv = all_w[0];
                 if (!ValidPoint(mv, board->size)) {
-                    board->LegalColour(mv, board->size);
+                    board->LegalColour(mv, Colour::WHITE);
                 } else if (mv != "" && mv != "tt") {
                     throw std::runtime_error("Invalid W move point: " + mv);
                 }
@@ -368,15 +369,15 @@ struct Node : public std::enable_shared_from_this<Node> {
 
     // PlayColour is like Play, except the colour is specified rather than being
     // automatically determined.
-    std::shared_ptr<Node> PlayColour(std::string move, std::string colour, bool checkLegal) {
+    std::shared_ptr<Node> PlayColour(std::string move, Colour colour, bool checkLegal) {
         if (checkLegal) {
-            auto legal = this->board->LegalColour(move, this->board->size);
+            auto legal = this->board->LegalColour(move,colour);
             if (!legal) {
                 throw std::runtime_error("Illegal move: " + move);
             }
         }
         auto key = "B";
-        if (colour == "W") {
+        if (colour == Colour::WHITE) {
             key = "W";
         }
         auto child = this->children;
@@ -400,11 +401,11 @@ struct Node : public std::enable_shared_from_this<Node> {
 
     // PassColour is like Pass, except the colour is specified rather than being
     // automatically determined.
-    std::shared_ptr<Node> PassColour(std::string colour) {
-        if (colour != "W" && colour != "B") {
-            throw std::runtime_error("Invalid colour: " + colour);
+    std::shared_ptr<Node> PassColour(Colour colour) {
+        if (colour != Colour::WHITE && colour != Colour::BLACK) {
+            throw std::runtime_error("Invalid colour: " + std::to_string(static_cast<int>(colour)));
         }
-        auto key = (colour == "W") ? "W" : "B";
+        auto key = (colour == Colour::WHITE) ? "W" : "B";
         for (const auto &child: this->children) {
             if (child->ValueCount(key) == 1) {
                 auto mv = child->GetValue(key);
