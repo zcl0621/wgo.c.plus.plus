@@ -3,12 +3,12 @@
 
 #endif // CONSOLEGO_NODE_H
 
-#include <string>
-#include <vector>
-#include <sstream>
-#include <memory>
 #include <algorithm>
 #include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include "board.h"
 #include "utils.h"
@@ -16,7 +16,7 @@
 const std::vector<std::string> mutors = {"B", "W", "AB", "AW", "AE", "PL", "SZ"};
 
 
-struct Node:  public std::enable_shared_from_this<Node>{
+struct Node : public std::enable_shared_from_this<Node> {
     // e.g. ["B" "dd"] ["TR", "dd", "fj", "np"]
     std::vector<std::vector<std::string>> props;
 
@@ -265,20 +265,14 @@ struct Node:  public std::enable_shared_from_this<Node>{
         // Remove from old parent's children
         if (auto old_parent = parent.lock()) {
             old_parent->children.erase(
-                std::remove_if(
-                    old_parent->children.begin(),
-                    old_parent->children.end(),
-                    [this](const std::shared_ptr<Node>& node) {
-                        return node.get() == this;
-                    }
-                ),
-                old_parent->children.end()
-            );
+                    std::remove_if(old_parent->children.begin(), old_parent->children.end(),
+                                   [this](const std::shared_ptr<Node> &node) { return node.get() == this; }),
+                    old_parent->children.end());
         }
-    
+
         // Set new parent
         parent = new_parent;
-    
+
         // Add to new parent's children if parent exists
         if (new_parent) {
             // Check for cycles
@@ -289,7 +283,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
                 }
                 current = current->parent.lock().get();
             }
-            
+
             // Add to children
             new_parent->children.push_back(shared_from_this());
         }
@@ -298,9 +292,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
 
     // DeleteChildren deletes all children of a node. This is useful for
     // clearing the children of a node when it is no longer needed.
-    void DeleteChildren() {
-        children.clear();
-    }
+    void DeleteChildren() { children.clear(); }
     // ToString returns a string representation of the node for debugging
     std::string ToString() {
         if (!this) {
@@ -316,20 +308,16 @@ struct Node:  public std::enable_shared_from_this<Node>{
         std::sort(keys.begin(), keys.end());
 
         std::ostringstream oss;
-        oss << "Node " << this
-            << ": depth " << (int)this->GetLine().size() - 1
-            << ", " << children.size() << " " << noun
-            << ", subtree size " << this->SubtreeSize()
-            << ", keys [";
+        oss << "Node " << this << ": depth " << (int) this->GetLine().size() - 1 << ", " << children.size() << " "
+            << noun << ", subtree size " << this->SubtreeSize() << ", keys [";
         for (size_t i = 0; i < keys.size(); ++i) {
             oss << keys[i];
-            if (i + 1 < keys.size()) oss << " ";
+            if (i + 1 < keys.size())
+                oss << " ";
         }
         oss << "]";
         return oss.str();
     }
-
-
 
 
     // Validate checks a node for obvious problems;
@@ -343,23 +331,23 @@ struct Node:  public std::enable_shared_from_this<Node>{
         if (all_b.size() + all_w.size() > 1) {
             throw std::runtime_error("Too many moves (B or W values)");
         }
-        if(all_b.size() + all_w.size() >0 && all_ab.size() + all_aw.size() + all_ae.size() >0){
+        if (all_b.size() + all_w.size() > 0 && all_ab.size() + all_aw.size() + all_ae.size() > 0) {
             throw std::runtime_error("Mix of move and setup properties");
         }
         auto parent = this->parent.lock().get();
         if (parent) {
             auto board = parent->board.get();
-            if(all_b.size() >0) {
+            if (all_b.size() > 0) {
                 auto mv = all_b[0];
-                if(!ValidPoint(mv, board->size)) {
+                if (!ValidPoint(mv, board->size)) {
                     board->LegalColour(mv, board->size);
                 } else if (mv != "" && mv != "tt") {
                     throw std::runtime_error("Invalid B move point: " + mv);
                 }
             }
-            if(all_w.size() >0) {
-                auto mv= all_w[0];
-                if(!ValidPoint(mv, board->size)) {
+            if (all_w.size() > 0) {
+                auto mv = all_w[0];
+                if (!ValidPoint(mv, board->size)) {
                     board->LegalColour(mv, board->size);
                 } else if (mv != "" && mv != "tt") {
                     throw std::runtime_error("Invalid W move point: " + mv);
@@ -377,14 +365,12 @@ struct Node:  public std::enable_shared_from_this<Node>{
     // along with an error. Failure indicates the move was illegal.
     //
     // Note that passes cannot be played with Play.
-    std::shared_ptr<Node> Play(std::string move) {
-        return  this->PlayColour(move, this->board->player, true);
-    }
+    std::shared_ptr<Node> Play(std::string move) { return this->PlayColour(move, this->board->player, true); }
 
     // PlayColour is like Play, except the colour is specified rather than being
     // automatically determined.
-    std::shared_ptr<Node> PlayColour(std::string move, std::string colour,bool checkLegal) {
-        if(checkLegal) {
+    std::shared_ptr<Node> PlayColour(std::string move, std::string colour, bool checkLegal) {
+        if (checkLegal) {
             auto legal = this->board->LegalColour(move, this->board->size);
             if (!legal) {
                 throw std::runtime_error("Illegal move: " + move);
@@ -395,7 +381,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
             key = "W";
         }
         auto child = this->children;
-        for(auto i = 0;i < child.size();i ++) {
+        for (auto i = 0; i < child.size(); i++) {
             if (child[i]->ValueCount(key) == 1) {
                 auto mv = child[i]->GetValue(key);
                 if (mv == move) {
@@ -411,9 +397,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
     // created, attached as a child, and returned. However, if the specified pass
     // already existed in a child, that child is returned instead and no new node is
     // created.
-    std::shared_ptr<Node> Pass() {
-        return this->PassColour(this->board->player);
-    }
+    std::shared_ptr<Node> Pass() { return this->PassColour(this->board->player); }
 
     // PassColour is like Pass, except the colour is specified rather than being
     // automatically determined.
@@ -422,7 +406,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
             throw std::runtime_error("Invalid colour: " + colour);
         }
         auto key = (colour == "W") ? "W" : "B";
-        for (const auto& child : this->children) {
+        for (const auto &child: this->children) {
             if (child->ValueCount(key) == 1) {
                 auto mv = child->GetValue(key);
                 if (!ValidPoint(mv, this->board->size)) {
@@ -478,7 +462,7 @@ struct Node:  public std::enable_shared_from_this<Node>{
         while (auto parent = node->parent.lock()) {
             // Find node in parent's children
             auto it = std::find_if(parent->children.begin(), parent->children.end(),
-                                   [node](const std::shared_ptr<Node>& child) { return child == node; });
+                                   [node](const std::shared_ptr<Node> &child) { return child == node; });
             if (it != parent->children.end() && it != parent->children.begin()) {
                 // Move node to front
                 parent->children.erase(it);
@@ -490,24 +474,22 @@ struct Node:  public std::enable_shared_from_this<Node>{
 
     // SubtreeSize returns the number of nodes in the subtree rooted at this node
     int SubtreeSize() {
-        int size = 1;  // Count this node
-        for (const auto& child : children) {
+        int size = 1; // Count this node
+        for (const auto &child: children) {
             size += child->SubtreeSize();
         }
         return size;
     }
 
     // TreeSize returns the number of nodes in the whole tree.
-    int TreeSize() {
-        return this->GetRoot()->SubtreeSize();
-    }
+    int TreeSize() { return this->GetRoot()->SubtreeSize(); }
 
     // SubtreeNodes returns a slice of every node in a node's subtree, including
     // itself.
     std::vector<std::shared_ptr<Node>> SubtreeNodes() {
         std::vector<std::shared_ptr<Node>> nodes;
         nodes.push_back(shared_from_this());
-        for (const auto& child : children) {
+        for (const auto &child: children) {
             auto childNodes = child->SubtreeNodes();
             nodes.insert(nodes.end(), childNodes.begin(), childNodes.end());
         }
@@ -529,15 +511,15 @@ struct Node:  public std::enable_shared_from_this<Node>{
     std::pair<int, int> SubTreeKeyValueCount() {
         auto keyCount = this->KeyCount();
         auto valueCount = 0;
-        for(auto& key : this->AllKeys() ) {
+        for (auto &key: this->AllKeys()) {
             valueCount += this->ValueCount(key);
         }
-        for(auto& child: this->children) {
+        for (auto &child: this->children) {
             auto [childKeys, childValues] = child->SubTreeKeyValueCount();
             keyCount += childKeys;
             valueCount += childValues;
         }
-        return {keyCount, valueCount}; 
+        return {keyCount, valueCount};
     }
     // TreeKeyValueCount returns the number of keys and values in the whole tree.
     std::pair<int, int> TreeKeyValueCount() {
@@ -576,38 +558,30 @@ struct Node:  public std::enable_shared_from_this<Node>{
     }
     // Dyer returns the Dyer Signature of the entire tree.
     std::string Dyer() {
-        std::map<int, std::string> vals = {
-            {20, "??"},
-            {40,"??"},
-            {60,"??"},
-            {31, "??"},
-            {51,"??"},
-            {71, "??"}
-        };
+        std::map<int, std::string> vals = {{20, "??"}, {40, "??"}, {60, "??"}, {31, "??"}, {51, "??"}, {71, "??"}};
         auto moveCount = 0;
         std::shared_ptr<Node> node = this->GetRoot();
         auto size = this->RootBoardSize();
         bool breaked = false;
-        std::vector<std::string> loopKeys = {"B","W"};
-        while(breaked == false) {
-            for(auto& key : loopKeys) {
+        std::vector<std::string> loopKeys = {"B", "W"};
+        while (breaked == false) {
+            for (auto &key: loopKeys) {
                 try {
                     auto mv = node->GetValue(key);
                     moveCount += 1;
-                    if (moveCount == 20 || moveCount == 40||moveCount== 60 || moveCount==31 || moveCount==51 || moveCount==71) {
+                    if (moveCount == 20 || moveCount == 40 || moveCount == 60 || moveCount == 31 || moveCount == 51 ||
+                        moveCount == 71) {
                         if (ValidPoint(mv, size)) {
                             vals[moveCount] = mv;
                         }
                     }
                 } catch (...) {
                 }
-               
             }
             node = node->MainChild();
             if (node == nullptr || moveCount > 71) {
                 breaked = true;
             }
-
         }
         return std::to_string(size) + vals[20] + vals[40] + vals[60] + vals[31] + vals[51] + vals[71];
     }
@@ -618,25 +592,23 @@ struct Node:  public std::enable_shared_from_this<Node>{
     //		* Changing a board-altering property.
     //		* Changing the identity of its parent.
     void clearBoardCacheRecursive() {
-        if(this->board.get() == nullptr) {
+        if (this->board.get() == nullptr) {
             return;
         }
         this->board = nullptr;
-        for (auto& child : this->children) {
+        for (auto &child: this->children) {
             child->clearBoardCacheRecursive();
         }
     }
 
     void mutorCheck(std::string key) {
-        for (auto& s:mutors) {
+        for (auto &s: mutors) {
             if (s == key) {
-                 this->clearBoardCacheRecursive();
-                 break;
+                this->clearBoardCacheRecursive();
+                break;
             }
         }
     }
     // TODO: complete this function
-    std::shared_ptr<Board> GetBoard() {
-        return this->board;
-    }
+    std::shared_ptr<Board> GetBoard() { return this->board; }
 };
